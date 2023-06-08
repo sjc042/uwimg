@@ -1,0 +1,32 @@
+from uwimg import *
+# im1 = load_image("data/Rainier1.png")
+# detect_and_draw_corners(im1, 2, 50, 3)
+# save_image(im1, "corners1")
+# im2 = load_image("data/Rainier2.png")
+# detect_and_draw_corners(im2, 2, 50, 3)
+# save_image(im2, "corners2")
+
+# a = load_image("data/Rainier1.png")
+# b = load_image("data/Rainier2.png")
+# m = find_and_draw_matches(a, b, 2, 50, 3)
+# save_image(m, "matches")
+
+im1 = load_image("data/sun1.jpg")
+im2 = load_image("data/sun2.jpg")
+im3 = load_image("data/sun3.jpg")
+
+pan1 = panorama_image(im2, im3, thresh=3)
+pan2 = panorama_image(im1, pan1, thresh=3)
+save_image(pan2, "sun_panorama")
+
+# im1 = load_image("data/Rainier1.png")
+# im2 = load_image("data/Rainier2.png")
+# im3 = load_image("data/Rainier3.png")
+# im4 = load_image("data/Rainier4.png")
+# im6 = load_image("data/Rainier6.png")
+# # pan1 = panorama_image(im1, im2, thresh=50)
+# # pan2 = panorama_image(pan1, im2, thresh=50)
+# pan3 = panorama_image(im1, im2, thresh=50)
+# # save_image(pan1, "easy_panorama1")
+# # save_image(pan2, "easy_panorama2")
+# save_image(pan3, "easy_panorama")
