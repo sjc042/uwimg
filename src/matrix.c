@@ -369,6 +369,7 @@ matrix solve_system(matrix M, matrix b)
     matrix a = matrix_mult_matrix(Mdag, b);
     free_matrix(Mt); free_matrix(MtM); free_matrix(MtMinv); free_matrix(Mdag);
     return a;
+
 }
 
 void test_matrix()

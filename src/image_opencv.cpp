@@ -14,12 +14,16 @@ extern "C" {
         image copy = copy_image(im);
         clamp_image(copy);
         int i,j;
-        Mat m(im.h, im.w, CV_8UC3);
+        // Mat m(im.h, im.w, CV_8UC3);
+        Mat m(CV_8UC3, im.h, im.w);
         for(j = 0; j < im.h; ++j){
             for(i = 0; i < im.w; ++i){
                 m.at<Vec3b>(j, i) = Vec3b( get_pixel(im, i, j, 2)*255,
-                        get_pixel(im, i, j, 1)*255,
-                        get_pixel(im, i, j, 0)*255);
+                        // get_pixel(im, i, j, 1)*255,
+                        // get_pixel(im, i, j, 0)*255);
+                        get_pixel(im, 1, j, i)*255,
+                        get_pixel(im, 0, j, i)*255);
+
             }
         }
         return m;
@@ -27,7 +31,8 @@ extern "C" {
 
     image mat_to_image(Mat m)
     {
-        image im = make_image(m.cols, m.rows, 3);
+        // image im = make_image(m.cols, m.rows, 3);
+        image im = make_image(3, m.rows, m.cols);
         int i,j;
         for(j = 0; j < im.h; ++j){
             for(i = 0; i < im.w; ++i){
@@ -35,9 +40,12 @@ extern "C" {
                 float blue = intensity.val[0]/255.;
                 float green = intensity.val[1]/255.;
                 float red = intensity.val[2]/255.;
-                set_pixel(im, i, j, 0, red);
-                set_pixel(im, i, j, 1, green);
-                set_pixel(im, i, j, 2, blue);
+                // set_pixel(im, i, j, 0, red);
+                // set_pixel(im, i, j, 1, green);
+                // set_pixel(im, i, j, 2, blue);
+                set_pixel(im, 0, j, i, red);
+                set_pixel(im, 1, j, i, green);
+                set_pixel(im, 2, j, i, blue);
             }
         }
         return im;

@@ -24,7 +24,7 @@ typedef struct{
 typedef struct{
     float x, y;
 } point;
-
+ 
 // A descriptor for a point in an image.
 // point p: x,y coordinates of the image pixel.
 // int n: the number of floating point values in the descriptor.
@@ -146,7 +146,7 @@ typedef struct{
 
 typedef struct {
     layer *layers;
-    int n;
+    int n;   // number of layers
 } model;
 
 data load_classification_data(char *images, char *label_file, int bias);

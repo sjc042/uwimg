@@ -13,9 +13,12 @@ int match_compare(const void *a, const void *b)
 {
     match *ra = (match *)a;
     match *rb = (match *)b;
-    if (ra->distance < rb->distance) return -1;
-    else if (ra->distance > rb->distance) return  1;
-    else return 0;
+    if (ra->distance < rb->distance)
+        return -1;
+    else if (ra->distance > rb->distance)
+        return 1;
+    else
+        return 0;
 }
 
 // Helper function to create 2d points.
@@ -24,7 +27,8 @@ int match_compare(const void *a, const void *b)
 point make_point(float x, float y)
 {
     point p;
-    p.x = x; p.y = y;
+    p.x = x;
+    p.y = y;
     return p;
 }
 
@@ -34,18 +38,24 @@ point make_point(float x, float y)
 image both_images(image a, image b)
 {
     image both = make_image(a.c > b.c ? a.c : b.c, a.h > b.h ? a.h : b.h, a.w + b.w);
-    int i,j,k;
-    for(k = 0; k < a.c; ++k){
-        for(j = 0; j < a.h; ++j){
-            for(i = 0; i < a.w; ++i){
+    int i, j, k;
+    for (k = 0; k < a.c; ++k)
+    {
+        for (j = 0; j < a.h; ++j)
+        {
+            for (i = 0; i < a.w; ++i)
+            {
                 set_pixel(both, k, j, i, get_pixel(a, k, j, i));
             }
         }
     }
-    for(k = 0; k < b.c; ++k){
-        for(j = 0; j < b.h; ++j){
-            for(i = 0; i < b.w; ++i){
-                set_pixel(both, k, j, i+a.w, get_pixel(b, k, j, i));
+    for (k = 0; k < b.c; ++k)
+    {
+        for (j = 0; j < b.h; ++j)
+        {
+            for (i = 0; i < b.w; ++i)
+            {
+                set_pixel(both, k, j, i + a.w, get_pixel(b, k, j, i));
             }
         }
     }
@@ -61,16 +71,18 @@ image both_images(image a, image b)
 image draw_matches(image a, image b, match *matches, int n, int inliers)
 {
     image both = both_images(a, b);
-    int i,j;
-    for(i = 0; i < n; ++i){
-        int bx = matches[i].p.x; 
-        int ex = matches[i].q.x; 
+    int i, j;
+    for (i = 0; i < n; ++i)
+    {
+        int bx = matches[i].p.x;
+        int ex = matches[i].q.x;
         int by = matches[i].p.y;
         int ey = matches[i].q.y;
-        for(j = bx; j < ex + a.w; ++j){
-            int r = (float)(j-bx)/(ex+a.w - bx)*(ey - by) + by;
-            set_pixel(both, 0, r, j, i<inliers?0:1);
-            set_pixel(both, 1, r, j, i<inliers?1:0);
+        for (j = bx; j < ex + a.w; ++j)
+        {
+            int r = (float)(j - bx) / (ex + a.w - bx) * (ey - by) + by;
+            set_pixel(both, 0, r, j, i < inliers ? 0 : 1);
+            set_pixel(both, 1, r, j, i < inliers ? 1 : 0);
             set_pixel(both, 2, r, j, 0);
         }
     }
@@ -111,14 +123,19 @@ image find_and_draw_matches(image a, image b, float sigma, float thresh, int nms
     return lines;
 }
 
-// Calculates L1 distance between to floating point arrays.
+// Calculates L1 distance between two floating point arrays.
 // float *a, *b: arrays to compare.
 // int n: number of values in each array.
 // returns: l1 distance between arrays (sum of absolute differences).
 float l1_distance(float *a, float *b, int n)
 {
     // TODO: return the correct number.
-    return 0;
+    float sum = 0;
+    for (int i = 0; i < n; ++i)
+    {
+        sum += fabs(a[i] - b[i]);
+    }
+    return sum;
 }
 
 // Finds best matches between descriptors of two images.
@@ -129,32 +146,74 @@ float l1_distance(float *a, float *b, int n)
 //          one other descriptor in b.
 match *match_descriptors(descriptor *a, int an, descriptor *b, int bn, int *mn)
 {
-    int i,j;
+    int i, j;
 
     // We will have at most an matches.
     *mn = an;
     match *m = calloc(an, sizeof(match));
-    for(j = 0; j < an; ++j){
+    for (j = 0; j < an; ++j)
+    {
         // TODO: for every descriptor in a, find best match in b.
-        // record ai as the index in *a and bi as the index in *b.
-        int bind = 0; // <- find the best match
+        float least_dist = 999999;
+        int bind = -1;
+        for (i = 0; i < bn; ++i)
+        {
+            float l1_dist = l1_distance(a[j].data, b[i].data, a[j].n);
+            if (least_dist > l1_dist)
+            {
+                least_dist = l1_dist;
+                bind = i;
+            }
+        }
+        // record ai as the index in *a and bi as the index in *b.]
         m[j].ai = j;
         m[j].bi = bind; // <- should be index in b.
         m[j].p = a[j].p;
         m[j].q = b[bind].p;
-        m[j].distance = 0; // <- should be the smallest L1 distance!
+        m[j].distance = least_dist; // <- should be the smallest L1 distance!
     }
 
-    int count = 0;
+    int count = 1;
     int *seen = calloc(bn, sizeof(int));
+    for (int y = 0; y < bn; ++y) // initialize all elements to -1 instead of 0
+    {
+        seen[y] = -1;
+    }
+
     // TODO: we want matches to be injective (one-to-one).
     // Sort matches based on distance using match_compare and qsort.
     // Then throw out matches to the same element in b. Use seen to keep track.
     // Each point should only be a part of one match.
     // Some points will not be in a match.
     // In practice just bring good matches to front of list, set *mn.
-
-
+    qsort(m, an, sizeof(match), match_compare);
+    seen[0] = m[0].bi;
+    for (int z = 1; z < an; z++) // iterate through m
+    {
+        // iterate through each match in sorted m based on distance low to high
+        // if the match's b index is seen before,
+        //      drop the current match
+        int found_duplicate = 0;
+        for (int y = 0; y < bn; ++y) // iterate through seen
+        {
+            if (m[z].bi == seen[y])
+            {
+                for (int x = z; x < an - 1; ++x)
+                {
+                    m[x] = m[x + 1];
+                }
+                --z;
+                --an;
+                found_duplicate = 1;
+                break;
+            }
+        }
+        if (!found_duplicate)
+        {
+            seen[z] = m[z].bi;
+            count++;
+        }
+    }
     *mn = count;
     free(seen);
     return m;
@@ -170,8 +229,14 @@ point project_point(matrix H, point p)
     // TODO: project point p with homography H.
     // Remember that homogeneous coordinates are equivalent up to scalar.
     // Have to divide by.... something...
-    point q = make_point(0, 0);
-
+    c.data[0][0] = p.x;
+    c.data[1][0] = p.y;
+    c.data[2][0] = 1; // c=[x, y, w] while arbituarily setting w to 1
+    matrix P = matrix_mult_matrix(H, c);
+    double x = P.data[0][0];
+    double y = P.data[1][0];
+    double w = P.data[2][0];
+    point q = make_point(x / w, y / w); // Normoalize on new w
     return q;
 }
 
@@ -181,7 +246,8 @@ point project_point(matrix H, point p)
 float point_distance(point p, point q)
 {
     // TODO: should be a quick one.
-    return 0;
+    float dist = sqrtf((p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y));
+    return dist;
 }
 
 // Count number of inliers in a set of matches. Should also bring inliers
@@ -200,7 +266,21 @@ int model_inliers(matrix H, match *m, int n, float thresh)
     // TODO: count number of matches that are inliers
     // i.e. distance(H*p, q) < thresh
     // Also, sort the matches m so the inliers are the first 'count' elements.
-
+    for (i = 0; i < n; ++i)
+    {
+        match curr = m[i];
+        point p = curr.p;
+        point q = curr.q;
+        point q_proj = project_point(H, p);
+        if (!(point_distance(q_proj, q) < thresh))
+        {
+            m[i] = m[n - 1];
+            m[n - 1] = curr;
+            n--;
+            i--;
+        }
+    }
+    count = n;
     return count;
 }
 
@@ -210,6 +290,16 @@ int model_inliers(matrix H, match *m, int n, float thresh)
 void randomize_matches(match *m, int n)
 {
     // TODO: implement Fisher-Yates to shuffle the array.
+    int i;
+    int j;
+
+    for (i + 0; i < n - 2; ++i)
+    {
+        j = rand() % (n - i);
+        match temp = m[i];
+        m[i] = m[j];
+        m[j] = temp;
+    }
 }
 
 // Computes homography between two images given matching pixels.
@@ -218,29 +308,48 @@ void randomize_matches(match *m, int n)
 // returns: matrix representing homography H that maps image a to image b.
 matrix compute_homography(match *matches, int n)
 {
-    matrix M = make_matrix(n*2, 8);
-    matrix b = make_matrix(n*2, 1);
-
+    matrix M = make_matrix(n * 2, 8);
+    matrix b = make_matrix(n * 2, 1);
     int i;
-    for(i = 0; i < n; ++i){
-        double x  = matches[i].p.x;
-        double xp = matches[i].q.x;
-        double y  = matches[i].p.y;
-        double yp = matches[i].q.y;
+    for (i = 0; i < M.rows; i += 2)
+    {
+        double x = matches[i / 2].p.x;
+        double xp = matches[i / 2].q.x;
+        double y = matches[i / 2].p.y;
+        double yp = matches[i / 2].q.y;
         // TODO: fill in the matrices M and b.
-
+        b.data[i][0] = xp;
+        b.data[i + 1][0] = yp;
+        double row[2][8] = {{x, y, 1, 0, 0, 0, -(x * xp), -(y * xp)}, {0, 0, 0, x, y, 1, -(x * yp), -(y * yp)}};
+        for (int j = 0; j < 8; ++j)
+        {
+            M.data[i][j] = row[0][j];
+            M.data[i + 1][j] = row[1][j];
+        }
     }
     matrix a = solve_system(M, b);
-    free_matrix(M); free_matrix(b); 
+    free_matrix(M);
+    free_matrix(b);
 
     // If a solution can't be found, return empty matrix;
     matrix none = {0};
-    if(!a.data) return none;
+    if (!a.data)
+        return none;
 
     matrix H = make_matrix(3, 3);
     // TODO: fill in the homography H based on the result in a.
-
+    for (i = 0; i < H.rows - 1; ++i)
+    {
+        for (int j = 0; j < H.rows; ++j)
+        {
+            H.data[i][j] = a.data[i * 3 + j][0];
+        }
+    }
+    H.data[2][0] = a.data[6][0];
+    H.data[2][1] = a.data[7][0];
+    H.data[2][2] = 1;
     free_matrix(a);
+
     return H;
 }
 
@@ -256,17 +365,24 @@ matrix RANSAC(match *m, int n, float thresh, int k, int cutoff)
     int e;
     int best = 0;
     matrix Hb = make_translation_homography(256, 0);
-    // TODO: fill in RANSAC algorithm.
-    // for k iterations:
-    //     shuffle the matches
-    //     compute a homography with a few matches (how many??)
-    //     if new homography is better than old (how can you tell?):
-    //         compute updated homography using all inliers
-    //         remember it and how good it is
     //         if it's better than the cutoff:
     //             return it immediately
     // if we get to the end return the best homography
+    int pairs = 4;                  // need at least four matches to solve 8 degree of freedom matrix
+    for (e = 0; e < k; ++e)
+    {
+        randomize_matches(m, n);
+        matrix H = compute_homography(m, pairs);
 
+        int count = model_inliers(H, m, n, thresh);
+        if (count > best)
+        {
+            Hb = compute_homography(m, count);
+            best = model_inliers(Hb, m, n, thresh);
+            if (best > cutoff)
+                return Hb;
+        }
+    }
     return Hb;
 }
 
@@ -276,14 +392,13 @@ matrix RANSAC(match *m, int n, float thresh, int k, int cutoff)
 // returns: combined image stitched together.
 image combine_images(image a, image b, matrix H)
 {
+
     matrix Hinv = matrix_invert(H);
-
     // Project the corners of image b into image a coordinates.
-    point c1 = project_point(Hinv, make_point(0,0));
-    point c2 = project_point(Hinv, make_point(b.w-1, 0));
-    point c3 = project_point(Hinv, make_point(0, b.h-1));
-    point c4 = project_point(Hinv, make_point(b.w-1, b.h-1));
-
+    point c1 = project_point(Hinv, make_point(0, 0));
+    point c2 = project_point(Hinv, make_point(b.w - 1, 0));
+    point c3 = project_point(Hinv, make_point(0, b.h - 1));
+    point c4 = project_point(Hinv, make_point(b.w - 1, b.h - 1));
     // Find top left and bottom right corners of image b warped into image a.
     point topleft, botright;
     botright.x = MAX(c1.x, MAX(c2.x, MAX(c3.x, c4.x)));
@@ -291,27 +406,41 @@ image combine_images(image a, image b, matrix H)
     topleft.x = MIN(c1.x, MIN(c2.x, MIN(c3.x, c4.x)));
     topleft.y = MIN(c1.y, MIN(c2.y, MIN(c3.y, c4.y)));
 
+    int y_top, y_bot, x_left, x_right;
+    y_top = topleft.y;
+    y_bot = botright.y;
+    x_left = topleft.x;
+    x_right = botright.x;
+
     // Find how big our new image should be and the offsets from image a.
     int dx = MIN(0, topleft.x);
     int dy = MIN(0, topleft.y);
     int w = MAX(a.w, botright.x) - dx;
     int h = MAX(a.h, botright.y) - dy;
 
-    // Can disable this if you are making very big panoramas.
-    // Usually this means there was an error in calculating H.
-    if(w > 7000 || h > 7000){
-        fprintf(stderr, "output too big, stopping\n");
-        //return copy_image(a);
-    }
+    // // Can disable this if you are making very big panoramas.
+    // // Usually this means there was an error in calculating H.
+    // if (w > 7000 || h > 7000)
+    // {
+    //     fprintf(stderr, "output too big, stopping\n");
+    //     // return copy_image(a);
+    // }
 
-    int i,j,k;
+    int i, j, k;
     image c = make_image(a.c, h, w);
 
     // Paste image a into the new image offset by dx and dy.
-    for(k = 0; k < a.c; ++k){
-        for(j = 0; j < a.h; ++j){
-            for(i = 0; i < a.w; ++i){
+    for (k = 0; k < a.c; ++k)
+    {
+        for (j = 0; j < a.h; ++j)
+        {
+            for (i = 0; i < a.w; ++i)
+            {
                 // TODO: fill in.
+                float aVal = get_pixel(a, k, j, i);
+                int h = j - dy;
+                int w = i - dx;
+                set_pixel(c, k, h, w, aVal);
             }
         }
     }
@@ -321,6 +450,29 @@ image combine_images(image a, image b, matrix H)
     // and see if their projection from a coordinates to b coordinates falls
     // inside of the bounds of image b. If so, use bilinear interpolation to
     // estimate the value of b at that projection, then fill in image c.
+
+    // from top left to bottom right of image b projected in c coordinates,
+    // project each point by H, see projected point is in b
+    // if point is in b, get pixel value in b using bl interpolation
+    for (int z = 0; z < c.c; ++z)
+    {
+        for (float y = y_top; y < y_bot; ++y)
+        {
+            for (float x = x_left; x < x_right; ++x)
+            {
+
+                point c_point = make_point(x, y);
+                point c2b = project_point(H, c_point);
+                if ((c2b.x < b.w && (c2b.x > 0 || (c2b.x < 0.002 && c2b.x > -0.002))) && (c2b.y < b.h && (c2b.y > 0 || (c2b.y < 0.002 && c2b.y > -0.002))))
+                {
+                    // get pixel value of b at [c2b.x, c2b.y, z] using bilinear interpolation
+                    float bVal = bilinear_interpolate(b, z, c2b.y, c2b.x);
+                    // set pixel value of c at [x, y, z]
+                    set_pixel(c, z, y - dy, x - dx, bVal);
+                }
+            }
+        }
+    }
 
     return c;
 }
@@ -343,14 +495,12 @@ image panorama_image(image a, image b, float sigma, float thresh, int nms, float
     // Calculate corners and descriptors
     descriptor *ad = harris_corner_detector(a, sigma, thresh, nms, &an);
     descriptor *bd = harris_corner_detector(b, sigma, thresh, nms, &bn);
-
     // Find matches
     match *m = match_descriptors(ad, an, bd, bn, &mn);
-
     // Run RANSAC to find the homography
     matrix H = RANSAC(m, mn, inlier_thresh, iters, cutoff);
-
-    if(0){
+    if (0)
+    {
         // Mark corners and matches between images, turn this off!!
         mark_corners(a, ad, an);
         mark_corners(b, bd, bn);
@@ -361,7 +511,6 @@ image panorama_image(image a, image b, float sigma, float thresh, int nms, float
     free_descriptors(ad, an);
     free_descriptors(bd, bn);
     free(m);
-
     // Stitch the images together with the homography
     image comb = combine_images(a, b, H);
     return comb;
@@ -373,6 +522,23 @@ image panorama_image(image a, image b, float sigma, float thresh, int nms, float
 // returns: image projected onto cylinder, then flattened.
 image cylindrical_project(image im, float f)
 {
-    //TODO: project image onto a cylinder
-    image c = copy_image(im);
+    // TODO: project image onto a cylinder
+    float theta;
+    float h;
+    float X;
+    float Y;
+    float Z;
+
+    image im_copy = copy_image(im);
+    for (int c = 0; c < im.c; ++c)
+    {
+        for (int h = 0; h < im.h; ++h)
+        {
+            for (int w = 0; w < im.w; ++w)
+            {
+                float theta = (w - w); // !!! Complete later !!! xc is 255
+            }
+        }
+    }
+    return im_copy;
 }
